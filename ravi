@@ -1,3 +1,8 @@
 this for error code
 
+#!/bin/bash
+secho"thisis "
+
+exit 0
+
 and we are yeston the d
