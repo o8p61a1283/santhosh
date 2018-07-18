@@ -1,0 +1,13 @@
+---
+  - name: EC2_ELB
+    hosts: local
+    gather_facts: False
+
+    tasks:
+      - name: Adding node to ELB utility-elb
+        ec2_elb:
+          ec2_elbs: utility-elb
+          instance_id: i-029e340be49ff67de
+          state: present
+          profile: utility-west
+          region: us-west-2

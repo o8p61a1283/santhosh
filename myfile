@@ -1,0 +1,14 @@
+DBINSTANCES	20	True	us-east-1a	7	rds-ca-2015	False	arn:aws:rds:us-east-1:641914872699:db:aftliferay-prod	db.m3.large	aftliferay-prod	available	aftliferay_prod	0	db-X2GFUZ6AQJX2I5Q4XCAUT2OQEY	mysql	5.6.34	2015-07-15T15:03:30.032Z	2017-10-10T15:20:00Z	general-public-license	aftliferay_admin	True	04:00-04:30	wed:08:50-wed:09:20	False	us-east-1b	False	standard
+DBPARAMETERGROUPS	default.mysql5.6	in-sync
+DBSUBNETGROUP	default	default	Complete	vpc-5bb0a13e
+SUBNETS	subnet-8d7859fa	Active
+SUBNETAVAILABILITYZONE	us-east-1a
+SUBNETS	subnet-b1dea6e8	Active
+SUBNETAVAILABILITYZONE	us-east-1b
+SUBNETS	subnet-62eff858	Active
+SUBNETAVAILABILITYZONE	us-east-1e
+SUBNETS	subnet-1b91fc30	Active
+SUBNETAVAILABILITYZONE	us-east-1d
+ENDPOINT	aftliferay-prod.c9vnjhvtynvm.us-east-1.rds.amazonaws.com	Z2R2ITUGPM61AM	3306
+OPTIONGROUPMEMBERSHIPS	default:mysql-5-6	in-sync
+VPCSECURITYGROUPS	active	sg-01ad7966

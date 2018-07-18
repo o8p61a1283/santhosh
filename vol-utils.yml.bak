@@ -1,0 +1,214 @@
+---
+
+# USAGE : ansible-playbook -i ~/hosts vol_utils.yml -e "HOSTNAME=rivetlogic-us-west-2a-standby-tangfour-01" --tags="create/extend/reduce/delete" --ask-sudo-pass
+# update variables.yml file.
+
+  - name: LVM Extend, Reduce and Delete 
+    hosts: "{{ HOSTNAME }}"
+    become_user: root
+    gather_facts: False
+
+    tasks:
+
+    - name: Getting Required vars from variable File
+      include_vars:
+       file: variables.yml
+      tags: always
+
+    - name: Gathering EC2 Facts.
+      local_action:
+        module: ec2_remote_facts
+        region: "{{ AWS_REGION }}"
+        profile: "{{ AWS_PROFILE }}"
+        filters:
+          "tag:Name": "{{ HOSTNAME }}"
+      register: aws_ec2_facts
+      tags: always
+
+    - name: Instance ID
+      debug: 
+        msg: "Instance_ID : {{ aws_ec2_facts.instances[0].id }}"
+      tags: always
+
+    - name: Setting device name based on instance virtualization type
+      set_fact:
+          DEV_NAME: "/dev/xvd{{ DEV_POSTFIX }}"
+      when: item.0 == "hvm"
+      with_together:
+        - "{{ aws_ec2_facts.instances|selectattr('state', 'equalto', 'running')|map(attribute='virtualization_type')|list }}"
+      tags: create,extend
+
+    - name: Setting device name based on instance virtualization type
+      set_fact:
+          DEV_NAME: "/dev/sd{{ DEV_POSTFIX }}"
+      when: item.0 == "paravirtual"
+      with_together:
+        - "{{ aws_ec2_facts.instances|selectattr('state', 'equalto', 'running')|map(attribute='virtualization_type')|list }}"
+      tags: create,extend
+
+    - name: Variables
+      set_fact:
+         VG_NAME: "{{ LVM_NAME }}_vg"
+         LV_NAME: "{{ LVM_NAME }}_lv"
+      tags: create,extend,reduce,delete
+    - name: Variables 2
+      set_fact:
+         MOUNT_SRC: "/dev/{{ VG_NAME }}/{{ LV_NAME }}"
+      tags: create,extend
+
+    - name: Creating Volume
+      local_action:
+        module: ec2_vol
+        profile: "{{ AWS_PROFILE }}"
+        region: "{{ AWS_REGION }}"
+        instance: "{{ item.0 }}"
+        volume_size: "{{ VOL_SIZE }}"
+        volume_type: "{{ VOL_TYPE }}"
+        device_name: "{{ DEV_NAME }}"
+        tags:
+          Name: "{{ LVM_NAME }}-{{ HOSTNAME }}"
+      register: aws_ec2_vol
+      tags: create,extend
+      with_together:
+        - "{{ aws_ec2_facts.instances|selectattr('state', 'equalto', 'running')|map(attribute='id')|list }}"
+
+    - debug: 
+        msg: "Newly created volume ID {{ item.0 }}"
+      tags: create,extend
+      with_together:
+        - "{{ aws_ec2_vol.results|map(attribute='volume_id')|list }}"
+
+    - name: creating Volume Group
+      lvg:
+        vg: "{{ VG_NAME }}"
+        pvs: "{{ DEV_NAME }}"
+      register: vg-create
+      become: true
+      tags: create
+
+    - name: Extending exsisting Volume Group
+      lvg:
+        vg: "{{ VG_NAME }}"
+        pvs: "{{ VG_EXTEND_DEVS }},{{ DEV_NAME }}"
+      register: vg-create
+      become: true
+      tags: extend
+    - debug: var=vg-create
+      tags: create,extend
+
+    - name: Creating LVM
+      lvol:
+        vg: "{{ VG_NAME }}"
+        lv: "{{ LV_NAME }}"
+        size: +100%FREE
+        force: yes
+      register: lv-create
+      become: true
+      tags: create
+    - debug: var=lv-create
+      tags: create
+
+    - name: Extending exisitng LVM
+      lvol:
+        vg: "{{ VG_NAME }}"
+        lv: "{{ LV_NAME }}"
+        size: +100%FREE
+        pvs: "{{ VG_EXTEND_DEVS }},{{ DEV_NAME }}"
+      register: lv-create
+      become: true
+      tags: extend
+      
+    - name: Formating device with ext4 FS
+      filesystem:
+        fstype: "{{ FS_TYPE }}"
+        dev: "{{ MOUNT_SRC }}"
+        resizefs: yes
+      register: fs-create
+      become: true
+      tags: create,extend
+    - debug: var=fs-create
+
+    - name: Mounting volume
+      mount:
+        path: "{{ MOUNT_POINT }}"
+        src: "{{ MOUNT_SRC }}"
+        fstype: "{{ FS_TYPE }}"
+        state: mounted
+      become: true
+      tags: create,extend
+
+    - name: List of Volumes attached to Instance "{{ HOSTNAME }}"
+      debug: 
+        msg: "{% for block_devices in aws_ec2_facts.instances %}\
+              {% for volume_id in block_devices.block_device_mapping %}\
+                  Volume_ID :
+                {{ volume_id['volume_id'] }}
+                  Device_Name:
+                {{ volume_id['device_name'] }}
+                  ;;
+              {% endfor %}\
+              {% endfor %}"
+      tags: list
+
+    - name: unmount Volume
+      mount:
+        path: "{{ UNMOUNT_POINT }}"
+        state: unmounted
+      become: true
+      tags: delete
+
+    - name: deleting entry from fstab
+      mount:
+        path: "{{ UNMOUNT_POINT }}"
+        state: absent
+      become: true
+      tags: delete
+
+    - name: delete LVM
+      lvol:
+        vg: "{{ VG_NAME }}"
+        lv: "{{ LV_NAME }}"
+        state: absent
+        force: yes
+      become: true
+      tags: delete
+
+    - name: delete VG
+      lvg:
+        vg: "{{ VG_NAME }}"
+        state: absent
+
+    - name: reduce LVM
+      lvol:
+        vg: "{{ VG_NAME }}"
+        lv: "{{ LV_NAME }}"
+        size: "{{ SIZE_RED }}"
+        force: yes
+      become: true
+      tags: reduce
+
+    - name: reduce VG
+      lvg:
+        vg: "{{ VG_NAME }}"
+        pvs: "{{ DEV_EXIST }}"
+      become: true
+      tags: reduce
+
+    - name: Removing Volume
+      local_action:
+         module: ec2_vol
+         profile: "{{ AWS_PROFILE }}"
+         region: "{{ AWS_REGION }}"
+         id: "{{ VOL_ID }}"
+         instance: None
+      tags: delete,reduce
+
+    - name: Deleting Volume
+      local_action:
+         module: ec2_vol
+         profile: "{{ AWS_PROFILE }}"
+         region: "{{ AWS_REGION }}"
+         id: "{{ VOL_ID }}"
+         state: absent
+      tags: delete,reduce
+

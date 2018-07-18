@@ -1,0 +1,11 @@
+---
+- name: Transfer and execute a script.
+  hosts: utility
+  remote_user: pbhagavathula
+  sudo: yes
+  tasks:
+     - name: Transfer the script
+       copy: src=test.sh dest=/home/pbhagavathula mode=0777
+
+     - name: Execute the script
+       command: sh /home/pbhagavathula/test.sh

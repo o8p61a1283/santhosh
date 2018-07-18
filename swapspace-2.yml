@@ -1,0 +1,27 @@
+---
+- hosts: utility
+  become: yes
+  become_user: root
+
+  vars:
+    VOL_SIZE: 100
+  tasks:
+
+    - name: Tesing fallocate
+      command: which fallocate
+      register: fallocate_result
+      tags: test
+
+    - debug:
+        msg: "{{ fallocate_result }}"
+      tags: test
+
+    - name: Create swap file
+      command: |
+              {% if '/usr/bin/fallocate' in fallocate_result.stdout %}
+              fallocate -l "{{ VOL_SIZE }}M" /tmp/swap1 creates=/tmp/swap1
+              {%else %}
+              echo "fallocate is not working"
+              {%endif %}
+      tags: test
+

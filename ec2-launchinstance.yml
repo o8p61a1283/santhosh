@@ -1,0 +1,20 @@
+---
+
+ - name: create a instance 
+   hosts: local
+   gather_facts: False
+   vars:
+     instance_type: t2.micro
+     image: ami-718c6909
+     region: us-west-2
+     Profile: "{{ PROFILE }}"
+     keypair: pavankumar 
+   tasks:
+     - name: launch instance   
+       ec2:
+          instance_type: "{{ instance_type }}"
+          image: "{{ image }}"
+          wait: true
+          region: "{{ region }}"
+          assign_public_ip: no
+       register: ec2

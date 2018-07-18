@@ -1,0 +1,19 @@
+---
+ - name: ec2 instances maintenance verification
+   hosts: local
+   gather_facts: False
+
+   vars:
+    Profile: "{{ PROFILE }}"
+    Region: "{{ REGION }}"
+   tasks:
+
+    - name: Maintenance Window for ec2
+      ec2_facts:
+
+    - name: Conditional
+      debug:
+        msg: "This instance is a t1.micro"
+      when: ansible_ec2_instance_type == "t1.micro"
+	
+       

@@ -1,0 +1,8 @@
+---
+  - name: curl the url
+    hosts: local
+    gather_facts: False
+
+    tasks:
+      - name: post to consul
+        shell: 'curl -X POST -d@/Users/pbhagavathula/utility.json -H "Content-Type: application/json" curl -Is localhost:8080/common/-thehub'

@@ -1,0 +1,27 @@
+---
+ 
+ - name: EC2-AMI
+   hosts: local
+   gather_facts: False
+ 
+   vars:
+    instance_ids: "{{ INSTANCE_ID }}"
+    ami_name: "{{ NAME }}"
+    ami_id: "{{ AMI_ID }}"
+    Profile: "{{ PROFILE }}"
+    Region: "{{ REGION }}"
+   tasks:
+    - name: Create AMI
+      ec2_ami:
+       profile: "{{ Profile }}"
+       region: "{{ Region }}"
+       instance_id: "{{ instance_ids }}"
+       wait: yes
+       image_id: yes
+       name: "{{ ami_name }}"
+       state: present
+       no_reboot: yes
+       tags:
+        Name: "{{ ami_name }}-backup"
+      register: image
+      tags: [create_snapshot]

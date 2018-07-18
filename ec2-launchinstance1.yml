@@ -1,0 +1,21 @@
+---
+
+ - name: create a instance 
+   hosts: local
+   gather_facts: False
+   vars:
+     instance_type: "{{ INSTANCE_TYPE }}"
+     image_id: "{{ IMAGE }}"
+     Region: "{{ REGION }}"
+     Profile: "{{ PROFILE }}"
+   tasks:
+     - name: launch instance   
+       ec2:
+          instance_type: "{{ instance_type }}"
+          key_name: pavankumar
+          image: "{{ image_id }}"
+          wait: true
+          assign_public_ip: no
+          profile: "{{ Profile }}"
+          region: "{{ Region }}"
+       register: ec2

@@ -1,0 +1,11 @@
+---
+  - name: Daily-Backup
+    hosts: utility
+    gather_facts: False
+    user: pbhagavathula
+    become: yes
+
+
+    tasks:
+      - name: execute the script
+        script: /root/scripts/createuser.sh

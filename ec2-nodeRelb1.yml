@@ -1,0 +1,19 @@
+---
+  - name: EC2_ELB
+    hosts: local
+    gather_facts: False
+
+    vars:
+     elbname: "{{ ELB }}"
+     instance_ids: "{{ INSTANCE_ID }}"
+     Profile: "{{ PROFILE }}"
+     Region: "{{ REGION }}"
+
+    tasks:
+      - name: Removing node from ELB utility-elb
+        ec2_elb:
+          ec2_elbs: "{{ elbname }}"
+          instance_id: "{{ instance_ids }}"
+          state: absent
+          profile: "{{ Profile }}"
+          region: "{{ Region }}"

@@ -1,0 +1,36 @@
+---
+ 
+ - name: EC2-AMI
+   hosts: local
+   gather_facts: False
+ 
+   vars:
+    ami_name: "{{ NAME }}"
+    ami_id: "{{ AMI_ID }}"
+    Profile: "{{ PROFILE }}"
+    Region: "{{ REGION }}"
+   tasks:
+     - pip:
+       name: boto
+     - ec2_ami_copy:
+         profile: "{{ Profile }}"
+         source_region: us-west-2
+         region: "{{ Region }}"
+         source_image_id: ami-1643586f
+         wait: yes
+         image_id: yes
+         name: utility-us-west-1b-prod
+         description: copying to east region
+         encrypted: no
+         name: "{{ ami_name }}"
+         no_reboot: yes
+         tags:
+          Name: "{{ ami_name }}-backup"
+        register: image
+        tags: [create_snapshot]
+ 
+
+    - debug: var=image
+      tags: [create_snapshot,delete_snapshot,list]
+ 
+...

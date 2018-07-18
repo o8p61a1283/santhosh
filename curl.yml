@@ -1,0 +1,13 @@
+---
+  - name: Terminate Instance
+    hosts: local
+    gather_facts: False
+
+    tasks:
+      - name: post to consul
+        uri:
+          url: http://prod-apps-vpc.mi-mgs.com/mgsmigrate/ipr/
+          method: POST
+          body: "{{ lookup('file','testing-test.json') }}"
+          body_format: json
+          HEADER_Content-Type: "application/json"

@@ -1,0 +1,91 @@
+---
+##### ======================================================================================================= #####
+##title          :create_user.yml
+#description     :This ansible playbook will create linux users for Ubuntu and Redhat Servers using keys from Webdav or from Local Machine
+#author          :Praveen Billakanti
+#date            :20180208
+#usage           :ansible-playbook -i ~/hosts create_user.yml -e "hostname=rivetlogic-us-west-2c-prod-monitoring-01" --ask-sudo-pass
+#notes           :Modify the Vars accordingly and mention the public key names as per webdav
+#ansible_version :2.3+
+#boto version    :boto3
+##### ======================================================================================================= #####
+
+ - name: Creating Login for User
+   hosts: "{{ hostname }}"
+   become_user: root
+   
+   vars:
+    user_name:
+      - pbhagavathula
+
+    user_password: rae8Kohs
+    group_append: wheel       
+    webdav: false
+    webdav_username: pavan.bhagavathula
+    webdav_password: ailePh4g
+    Webdav_Public_Keys:
+      - /Users/pbhagavathula/.ssh/PavanBhagavathula4k.pub
+
+   tasks:
+
+   - name: Generating Hash Password
+     shell: "echo \"{{user_name}}:{{user_password}}\" | chpasswd -c SHA512 -S | awk -F \":\" \'{print $2}\'"
+     register: hash_password_u
+     tags: create
+     when: ansible_distribution == "Ubuntu"
+
+   - name: Generating Hash Password
+     shell: "echo \"{{user_name}}:{{user_password}}\" | chpasswd -c SHA512 | awk -F \":\" \'{print $2}\'"
+     register: hash_password_r
+     tags: create
+     when: ansible_distribution == "RedHat"
+
+   - name: setting password Variable
+     set_fact:
+       H_Password: "{{ (ansible_distribution == 'Ubuntu') | ternary(hash_password_u.stdout, hash_password_r.stdout) }}"
+
+   - name: Creating User and appending to group
+     user:
+       name: "{{ item }}"
+       comment: "{{ item }},,,"
+       shell: /bin/bash
+       groups: "{{ group_append }}"
+       append: yes
+       update_password: always
+       password: "{{ H_Password }}"
+     with_items: "{{ user_name }}"
+     tags: create
+     become: true
+
+   - name: Getting public key from Webdav
+     local_action:
+         module: get_url
+         url: "https://resources.rivetlogic.com/internal-file-exchange/IT/public-keys/{{ item }}"
+         url_username: "{{ webdav_username }}"
+         url_password: "{{ webdav_password }}"
+         dest: "/tmp/{{ item }}"
+     with_items: "{{ Webdav_Public_Keys }}"
+     when: webdav
+
+   - name: adding ssh key 
+     authorized_key:
+       user: "{{ item.0 }}"
+       key: "{{ lookup('file','/tmp/{{ item.1 }}') }}" 
+     with_together:
+       - "{{ user_name }}"
+       - "{{ Webdav_Public_Keys }}"
+     tags: create
+     become: true
+     when: webdav
+     
+   - name: adding ssh key
+     authorized_key:
+       user: "{{ item.0 }}"
+       key: "{{ lookup('file','{{ item.1 }}') }}"
+     with_together:
+       - "{{ user_name }}"
+       - "{{ Webdav_Public_Keys }}"
+     tags: create
+     become: true
+     when: not webdav
+     

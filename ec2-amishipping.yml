@@ -1,0 +1,14 @@
+---
+  - name: AMI_COPY
+    hosts: local
+    gather_facts: False
+
+    tasks:
+      - ec2_ami_copy:
+          profile: utility-west
+          source_region: us-west-2
+          region: us-east-1
+          source_image_id: ami-1643586f
+          name: utility-us-west-1b-prod
+          description: latest patch
+          encrypted: no

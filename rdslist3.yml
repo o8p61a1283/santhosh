@@ -1,0 +1,19 @@
+---
+
+- name: Getting RDS Instance Type
+  hosts: local
+  gather_facts: False
+
+  tasks:
+
+  - name: Listing RDS
+    rds:
+      command: facts
+      profile: aft-us-east
+      region: us-east-1
+      instance_name: aftliferay-prod
+    register: rds_facts
+
+  - name: Printing Result
+    debug:
+      msg: "{{ rds_facts }}"

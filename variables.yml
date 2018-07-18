@@ -1,0 +1,23 @@
+### Global variables
+
+AWS_PROFILE: dropbox-west
+AWS_REGION: us-west-2
+LVM_NAME:  usr_vg                # Volume Group Name
+
+### Following are the variables required for Adding Volume
+
+VOL_SIZE: 5                      #volume size in GB
+VOL_TYPE: standard               # volume type (ex: standard,GP2)
+DEV_POSTFIX: bh                  # Device name extension (ex: /dev/xvdba so DEV_POSTFIX=ba)
+FS_TYPE: ext4                    # Filesystem Type
+MOUNT_POINT: /usr           # Directory path where LVM need to be mounted
+VG_EXTEND_DEVS: /dev/xvdbg       # Comma separated list of physical volumes that are already exisiting in LVM (For Extending LVM)
+
+
+###Following are the variables required for Deleting Volume
+
+VOL_ID: vol-0105b5c9e96a46627        #Volume to be deleted
+UNMOUNT_POINT: /mnt/secscans        #volume mounted path
+SIZE_RED: 1020                       #can provide in %of VG or in required size in MB (For Reducing LVM)
+DEV_EXIST: /dev/xvdbc                #Comma separated list of physical volumes that will exists in LVM (For Reducing LVM)
+

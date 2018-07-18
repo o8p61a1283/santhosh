@@ -1,0 +1,17 @@
+---
+# playbook.yml
+- hosts: local
+  connection: local
+  gather_facts: true
+  vars:
+    profile: rivet-west
+    region: us-west-2
+  tasks:
+    - name: Listing RDS Instances
+      local_action:
+        module: rds
+        command: facts
+        profile: "{{ profile }}"
+        region: "{{ region }}"
+        wait: yes
+

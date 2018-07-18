@@ -1,0 +1,21 @@
+---
+  - name: AMI_COPY
+    hosts: local
+    gather_facts: False
+
+    vars:
+     Profile: "{{ PROFILE }}"
+     SRegion: "{{ SOURCEREGION }}"
+     Region: "{{ REGION }}"   
+     SimageID: "{{ SID }}"
+       
+
+    tasks:
+      - ec2_ami_copy:
+          profile: "{{ Profile }}"
+          source_region: "{{ SRegion }}"
+          region: "{{ Region }}"
+          source_image_id: "{{ SimageID }}"
+          name: utility-us-west-1b-prod
+          description: latest patch
+          encrypted: no

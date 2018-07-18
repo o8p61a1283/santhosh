@@ -1,0 +1,8 @@
+---
+- name: Transfer and execute a script.
+  hosts: utility
+  remote_user: pbhagavathula
+  sudo: yes
+  tasks:
+     - name: check auditd status
+       shell: service auditd status

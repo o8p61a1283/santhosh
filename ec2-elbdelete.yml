@@ -1,0 +1,22 @@
+---
+ - name: Load Balancer deletion
+   hosts: local
+   gather_facts: False
+  
+   tasks:
+    - name: remove load balancer
+      ec2_elb_lb:
+        profile: utility-west
+        name: utility-elb
+        state: absent
+        region: us-west-2
+        zones:
+          - us-west-2a
+          - us-west-2b
+          - us-west-2c
+        listeners:
+          - protocol: http
+            load_balancer_port: 80
+            instance_port: 80
+      register: utility-elb
+

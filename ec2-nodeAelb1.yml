@@ -1,0 +1,19 @@
+---
+  - name: EC2_ELB
+    hosts: local
+    gather_facts: False
+ 
+    vars:
+     instance_ids: "{{ INSTANCE_ID }}"
+     Profile: "{{ PROFILE }}"
+     Region: "{{ REGION }}"
+     elbname: "{{ ELB }}"
+
+    tasks:
+      - name: Adding node to ELB utility-elb
+        ec2_elb:
+          ec2_elbs: "{{ elbname }}"
+          instance_id: "{{ instance_ids }}"
+          state: present
+          profile: "{{ Profile }}"
+          region: "{{ Region }}"

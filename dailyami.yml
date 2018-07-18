@@ -1,0 +1,62 @@
+---
+- name: AMI Backup
+  hosts: local
+  gather_facts: True
+
+  pre_tasks:
+    - name: Getting the today's date and time
+      set_fact: Date_Time="{{lookup('pipe','date \-u \"+%Y%m%d-%H%M%S\"')}}"
+    - name: Getting the today's date and time
+      set_fact: Date="{{lookup('pipe','date \-u \"+%Y%m%d\"')}}"
+    - name: Getting the today's date and time
+      set_fact: Pre_Date="{{lookup('pipe','date \-v \-1d \"+%Y%m%d\"')}}"
+
+  vars:
+    Region: "{{ REGION }}"
+    Profile: "{{ PROFILE }}"
+    
+  tasks:
+    - name: Gathering ec2 facts
+      ec2_remote_facts:
+      register: tagged_instances
+
+    - name: Taking ami backups for instances having tag only Snapshot equal to yes.
+      ec2_ami:
+        instance_id: "{{ i-0aa1c0957a65555e2 }}"
+        region: "{{ Region }}"
+        name: "{{ non-cmd-us-east-1a-stage-app-01 }}-{{ Date_Time }}"
+        state: present
+        no_reboot: yes
+        tags:
+          Name: "{{ non-cmd-us-east-1a-stage-app-01 }}-backup"
+          Date: "{{ Date }}"
+        wait: yes
+        wait_timeout: 300
+      register: ami_backup
+      when: ( item.1  == "yes")
+      ignore_errors: yes
+      with_together:
+        - "{{ tagged_instances.instances | map(attribute='tags.Name') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='tags.Snapshot') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='id') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='tags.Backup') | list }}"
+
+    - name: Get Previous Days AMI Details in Live region
+      ec2_ami_find:
+        owner: self
+        ami_tags:
+          Date: "{{ Pre_Date }}"
+      register: pre_ami_details
+
+
+    - name: Pasuing playbook for 2 mins to get ami's available
+      pause:
+        minutes: 2
+
+
+    - debug:
+        msg: "{{ item }}"
+      with_together:
+        - "{{ ami_details.results | map(attribute='ami_id') | list }}"
+
+

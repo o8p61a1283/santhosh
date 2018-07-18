@@ -1,0 +1,128 @@
+---
+ 
+# update variables.yml file.
+ 
+  - name: LVM CREATE
+    hosts: "{{ HOSTNAME }}"
+    become_user: root
+    gather_facts: False
+    tasks:
+    - name: Getting Required vars from variable File
+      include_vars:
+       file: variables.yml
+      tags: always
+    - name: Gathering EC2 Facts.
+      local_action:
+        module: ec2_remote_facts
+        region: "{{ AWS_REGION }}"
+        profile: "{{ AWS_PROFILE }}"
+        filters:
+          "tag:Name": "{{ HOSTNAME }}"
+      register: aws_ec2_facts
+      tags: always
+ 
+    - name: Instance ID
+      debug:
+        msg: "Instance_ID : {{ aws_ec2_facts.instances[0].id }}"
+      tags: always
+ 
+    - name: Setting device name based on instance virtualization type
+      set_fact:
+          DEV_NAME: "/dev/xvd{{ DEV_POSTFIX }}"
+      when: item.0 == "hvm"
+      with_together:
+        - "{{ aws_ec2_facts.instances|selectattr('state', 'equalto', 'running')|map(attribute='virtualization_type')|list }}"
+      tags: create,extend
+ 
+    - name: Setting device name based on instance virtualization type
+      set_fact:
+          DEV_NAME: "/dev/sd{{ DEV_POSTFIX }}"
+      when: item.0 == "paravirtual"
+      with_together:
+        - "{{ aws_ec2_facts.instances|selectattr('state', 'equalto', 'running')|map(attribute='virtualization_type')|list }}"
+      tags: create,extend
+ 
+    - name: Variables
+      set_fact:
+         VG_NAME: "{{ LVM_NAME }}_vg"
+         LV_NAME: "{{ LVM_NAME }}_lv"
+      tags: create
+ 
+    - name: Variables 2
+      set_fact:
+         MOUNT_SRC: "/dev/{{ VG_NAME }}/{{ LV_NAME }}"
+      tags: create
+ 
+    - name: Creating Volume
+      local_action:
+        module: ec2_vol
+        profile: "{{ AWS_PROFILE }}"
+        region: "{{ AWS_REGION }}"
+        instance: "{{ item.0 }}"
+        volume_size: "{{ VOL_SIZE }}"
+        volume_type: "{{ VOL_TYPE }}"
+        device_name: "{{ DEV_NAME }}"
+        tags:
+          Name: "{{ LVM_NAME }}-{{ HOSTNAME }}"
+      register: aws_ec2_vol
+      tags: create
+      with_together:
+        - "{{ aws_ec2_facts.instances|selectattr('state', 'equalto', 'running')|map(attribute='id')|list }}"
+ 
+    - debug:
+        msg: "Newly created volume ID {{ item.0 }}"
+      tags: create
+      with_together:
+        - "{{ aws_ec2_vol.results|map(attribute='volume_id')|list }}"
+ 
+    - name: creating Volume Group
+      lvg:
+        vg: "{{ VG_NAME }}"
+        pvs: "{{ DEV_NAME }}"
+      register: vg-create
+      become: true
+      tags: create
+ 
+    - name: Creating LVM
+      lvol:
+        vg: "{{ VG_NAME }}"
+        lv: "{{ LV_NAME }}"
+        size: +100%FREE
+        force: yes
+      register: lv-create
+      become: true
+      tags: create
+ 
+    - debug: var=lv-create
+      tags: create
+ 
+    - name: Formating device with ext4 FS
+      filesystem:
+        fstype: "{{ FS_TYPE }}"
+        dev: "{{ MOUNT_SRC }}"
+        resizefs: yes
+      register: fs-create
+      become: true
+      tags: create
+ 
+    - debug: var=fs-create
+    - name: Mounting volume
+      mount:
+        path: "{{ MOUNT_POINT }}"
+        src: "{{ MOUNT_SRC }}"
+        fstype: "{{ FS_TYPE }}"
+        state: mounted
+      become: true
+      tags: create
+    - name: List of Volumes attached to Instance "{{ HOSTNAME }}"
+      debug:
+        msg: "{% for block_devices in aws_ec2_facts.instances %}\
+              {% for volume_id in block_devices.block_device_mapping %}\
+                  Volume_ID :
+                {{ volume_id['volume_id'] }}
+                  Device_Name:
+                {{ volume_id['device_name'] }}
+                  ;;
+              {% endfor %}\
+              {% endfor %}"
+      tags: list

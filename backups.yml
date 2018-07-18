@@ -1,0 +1,36 @@
+---
+- hosts: aft-prod
+  remote_user: pbhagavathula
+  become: true
+  become_user: root
+  tasks:
+  - name: take app and db backup
+    shell: /root/scripts/daily-backup
+    register: result
+ 
+#### Take AMI backup
+- name: EC2-AMI
+  hosts: local
+  gather_facts: False
+  vars:
+   instance_ids: i-b987d76a 
+   ami_name: aft-prod-us-east-1a 
+   Profile: aft-us-east
+   Region: us-east-1
+   date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+ 
+  tasks:
+   - name: Create AMI
+     ec2_ami:
+      profile: "{{ Profile }}"
+      region: "{{ Region }}"
+      instance_id: "{{ instance_ids }}"
+      wait: yes
+      image_id: yes
+      name: "{{ ami_name }}-{{ date }}"
+      state: present
+      no_reboot: yes
+      tags:
+       Name: "DONOTDELETE-{{ ami_name }}"
+     register: image
+     tags: [create_snapshot]

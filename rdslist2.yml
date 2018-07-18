@@ -1,0 +1,19 @@
+---
+
+  - hosts: localhost
+    connection: local
+    gather_facts: False
+    tasks:
+    - name: look up info for rds instances in rivet-west
+      rds:
+        command=facts
+        instance_name="rivet-west-standby"
+        region={{ region }}
+      register: rds
+      until: rds.instance.status == "available"
+      retries: 30
+      delay: 60
+
+    - name:  debug it
+      debug:  msg="{{ rds.instance.status }}" 
+...

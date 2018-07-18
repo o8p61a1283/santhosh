@@ -1,0 +1,29 @@
+---
+ 
+ - name: EC2-AMI
+   hosts: local
+   gather_facts: False
+ 
+   vars:
+    instance_ids: "{{ INSTANCE_ID }}"
+    ami_name: "{{ NAME }}"
+    ami_id: "{{ AMI_ID }}"
+    Profile: "{{ PROFILE }}"
+    Region: "{{ REGION }}"
+   tasks:
+    - name: List AMI
+      ec2_ami_find:
+       profile: "{{ Profile }}"
+       region: "{{ Region }}"
+       owner: self
+       sort: creationDate
+       sort_order: descending
+       state: available
+#      state: pending	
+      register: image
+      tags: [list]
+ 
+    - debug: var=image
+      tags: [create_snapshot,delete_snapshot,list]
+ 
+...

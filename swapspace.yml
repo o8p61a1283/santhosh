@@ -1,0 +1,67 @@
+---
+- hosts: utility
+  become: yes
+  become_user: root
+  tasks:
+
+    - name: Tesing fallocate
+      command: which fallocate
+      register: fallocate_result
+      tags: test
+
+    - name: Create swap file
+      command: |
+              {% if '/usr/bin/fallocate' in fallocate_result.stdout %}
+              fallocate -l 1g /mnt/swap/swap creates=/mnt/swap/swap
+              {%else %}
+              echo "fallocate is not working"
+              {%endif %}
+      ignore_errors: true
+      tags: test                    
+
+
+    - name: Change swap file permissions
+      file: path=/mnt/swap/swap
+            owner=root
+            group=root
+            mode=0600
+      tags:
+        - swap.file.permissions
+
+
+    - name: "Check swap file type"
+      command: file /mnt/swap/swap
+      register: swapfile
+      tags:
+        - swap.file.mkswap
+
+    - debug:
+        msg: "{{ swapfile }}"
+      tags: swap.file.mkswap
+
+    - name: Make swap file
+      command: "sudo mkswap /mnt/swap/swap"
+      when: swapfile.stdout.find('swap file') == -1
+      tags:
+        - swap.file.mkswap
+
+
+    - name: Write swap entry in fstab
+      mount: name=none
+             src=/mnt/swap/swap
+             fstype=swap
+             opts=sw
+             passno=0
+             dump=0
+             state=present
+      tags:
+        - swap.fstab
+
+    - debug:
+        msg: "{{ ansible_swaptotal_mb }}"
+
+    - name: Mount swap
+      command: swapon /mnt/swap/swap
+      when: ansible_swaptotal_mb < 1
+      tags:
+        - swap.file.swapon

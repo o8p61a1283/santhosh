@@ -1,0 +1,14 @@
+---
+- name: Removing a user
+  hosts: utility
+  gather_facts: True
+  become: true
+
+  vars:
+   username:  jay
+
+  tasks:
+  - user:
+      name: "{{ username }}"
+      state: absent
+      remove: yes

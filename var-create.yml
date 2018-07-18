@@ -1,0 +1,12 @@
+# Following are the variables required for Adding Volume
+
+VOL_SIZE: 1                      #volume size in GB
+VOL_TYPE: standard                     # volume type (ex: standard,GP2)
+DEV_NAME: /dev/xvdb	         #Device name in AWS
+DEV_NAME_INSTANCE: /dev/xvdb    #Device name on instance
+OLD_DEV_NAME: /dev/xvdbc       # This required only when to extend LVM
+VG_NAME: swap_vg                  # Volume Group Name
+LV_NAME: swap_lv                  # Logical Volume Name
+FS_TYPE: ext4                     # Filesystem Type
+MOUNT_SRC: /dev/swap_vg/swap_lv   # source mount point
+MOUNT_DST: /mnt/swap/            # Mount point on instance

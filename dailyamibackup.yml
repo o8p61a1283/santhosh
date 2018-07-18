@@ -1,0 +1,130 @@
+---
+- name: AMI Backup and Shipping to DR Region
+  hosts: local
+  gather_facts: True
+
+  pre_tasks:
+    - name: Getting the today's date and time
+      set_fact: Date_Time="{{lookup('pipe','date \-u \"+%Y%m%d-%H%M%S\"')}}"
+    - name: Getting the today's date and time
+      set_fact: Date="{{lookup('pipe','date \-u \"+%Y%m%d\"')}}"
+    - name: Getting the today's date and time
+      set_fact: Pre_Date="{{lookup('pipe','date \-v \-1d \"+%Y%m%d\"')}}"
+
+  vars:
+    DR_Region: ap-northeast-1
+    Region: ap-south-1
+
+  tasks:
+    - name: Gathering ec2 facts
+      ec2_remote_facts:
+      register: tagged_instances
+
+    - name: Taking ami backups for instances have tags Snapshot and Backup equal to yes.
+      ec2_ami:
+        instance_id: "{{ item.2 }}"
+        name: "{{ item.0}}-{{ Date_Time }}"
+        state: present
+        no_reboot: yes
+        tags:
+          Name: "{{ item.0 }}-backup"
+          Backup: yes
+          Date: "{{ Date }}"
+        wait: yes
+        wait_timeout: 300
+      register: ami_backup
+      when: ( item.1 =="yes" and not item.3 )
+      ignore_errors: yes
+      with_together:
+        - "{{ tagged_instances.instances | map(attribute='tags.Name') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='tags.Snapshot') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='id') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='tags.Backup') | list }}"
+
+    - name: Taking ami backups for instances having tag only Snapshot equal to yes.
+      ec2_ami:
+        instance_id: "{{ item.2 }}"
+        name: "{{ item.0}}-{{ Date_Time }}"
+        state: present
+        no_reboot: yes
+        tags:
+          Name: "{{ item.0 }}-backup"
+          Date: "{{ Date }}"
+        wait: yes
+        wait_timeout: 300
+      register: ami_backup
+      when: ( item.1  == "yes")
+      ignore_errors: yes
+      with_together:
+        - "{{ tagged_instances.instances | map(attribute='tags.Name') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='tags.Snapshot') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='id') | list }}"
+        - "{{ tagged_instances.instances | map(attribute='tags.Backup') | list }}"
+
+    - name: Get Previous Days AMI Details in Live region
+      ec2_ami_find:
+        owner: self
+        ami_tags:
+          Date: "{{ Pre_Date }}"
+      register: pre_ami_details
+
+    - name: Deleting Previous Day's Ami in Live region
+      ec2_ami:
+        image_id: "{{ item.0 }}"
+        delete_snapshot: True
+        state: absent
+        wait: yes
+      with_together:
+        - "{{ pre_ami_details.results | map(attribute='ami_id') | list }}"
+
+    - name: Pasuing playbook for 2 mins to get ami's available
+      pause:
+        minutes: 2
+
+    - name: Get Today's AMI Details for shipping them to DR region
+      ec2_ami_find:
+        owner: self
+        ami_tags:
+          Date: "{{ Date }}"
+      register: ami_details
+
+
+    - debug:
+        msg: "{{ item }}"
+      with_together:
+        - "{{ ami_details.results | map(attribute='ami_id') | list }}"
+
+    - name: Getting Previous day's Ami's on DR region
+      ec2_ami_find:
+        owner: self
+        region: "{{ DR_Region }}"
+      register: dr_pre_ami_details
+
+    - name: Deleting Previous Day AMI in DR region
+      ec2_ami:
+        image_id: "{{ item.0 }}"
+        region: "{{ DR_Region }}"
+        delete_snapshot: True
+        state: absent
+        wait: yes
+      when: ( not item.1 )
+      with_together:
+        - "{{ dr_pre_ami_details.results | map(attribute='ami_id') | list }}"
+        - "{{ dr_pre_ami_details.results | map(attribute='tags.Name') | list }}"
+
+    - name: Get AMI Ship to DR region.
+      ec2_ami_copy:
+        source_region: "{{ Region }}"
+        region: "{{ DR_Region }}"
+        source_image_id: "{{ item.1 }}"
+        name: "{{ item.2 }}-{{ Date_Time }}"
+        description: "{{ item.2 }}-west"
+        wait: yes
+        wait_timeout: 120
+        encrypted: no
+#      with_items: "{{ ami-backup }}"
+      when: ( item.0 == "True")
+      with_together:
+        - "{{ ami_details.results | map(attribute='tags.Backup') | list }}"
+        - "{{ ami_details.results | map(attribute='ami_id') | list }}"
+        - "{{ ami_details.results | map(attribute='tags.Name') | list }}"

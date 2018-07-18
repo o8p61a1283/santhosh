@@ -1,0 +1,29 @@
+---
+  - name: Daily-Backup
+    hosts: local
+    gather_facts: False
+    user: pbhagavathula
+    sudo: yes
+
+    vars:
+     instance_ids: "{{ INSTANCE_ID }}"
+     Profile: "{{ PROFILE }}"
+     Region: "{{ REGION }}"
+
+    tasks:
+      - name: execute the script
+          local_action: command sudo sh /home/test_user/test.sh
+ 
+          profile: "{{ Profile }}"
+          region: "{{ Region }}"
+          instance_id: "{{ instance_ids }}"
+          state: absent
+          
+
+
+
+ 
+     - name: Execute the script
+       local_action: command sudo sh /home/test_user/test.sh
+
+

@@ -1,0 +1,8 @@
+---
+ - name: ec2 instances maintenance verification
+   hosts: local
+   gather_facts: False
+
+ - ec2_remote_facts:
+     filters:
+       instance-id: i-a9ce6634

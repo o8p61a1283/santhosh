@@ -1,0 +1,22 @@
+---
+ 
+- name: Transfer and execute a script.
+ 
+  hosts: "{{ instance_name }}"
+ 
+  gather_facts: False
+ 
+  remote_user: pbhagavathula
+ 
+  sudo: yes
+ 
+  tasks:
+ 
+     - name: check openvas-manager status
+ 
+       shell: service openvas-manager status
+ 
+ 
+     - name: check openvas-scanner status
+ 
+       shell: service openvas-scanner status

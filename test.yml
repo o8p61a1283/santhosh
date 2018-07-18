@@ -1,0 +1,7 @@
+---
+# playbook.yml
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Testing 
+      command: aws --profile aft-us-east ec2 describe-instances > myFile

@@ -1,0 +1,97 @@
+---
+ - name: Tangfour Verification
+   hosts: local
+   gather_facts: False
+ 
+   vars:
+    user_name: pavan.bhagavathula
+    pass_word: ailePh4g
+    WIKIURL: https://wiki-standby.rivetlogic.com
+    JIRAURL: https://issues-standby.rivetlogic.com
+    BAMBOOURL: https://bamboo-standby.rivetlogic.com
+    CROWDURL: https://crowd-standby.rivetlogic.com
+    GITURL: https://git-standby.rivetlogic.com
+ 
+   tasks:
+   - name: Verifying wiki URL
+     uri:
+       url: "{{ WIKIURL }}"
+       method: GET
+       user: "{{ user_name }}"
+       password: "{{ pass_word }}"
+       force_basic_auth: yes
+       status_code: 200
+       return_content: yes
+     register: wiki
+     tags: [wiki]
+ 
+   - name: Fail if Username is not in WIKI page content
+     fail:
+      msg: "Login Failed"
+     when: "'pavan.bhagavathula' not in wiki.content"
+     tags: [wiki]
+ 
+ 
+   - name: Verifying Jira URL
+     uri:
+       url: "{{ JIRAURL }}"
+       method: GET
+       user: "{{ user_name }}"
+       password: "{{ pass_word }}"
+       force_basic_auth: yes
+       status_code: 200
+       return_content: yes
+     register: jira
+     tags: [jira]
+ 
+ 
+   - name: Fail if Username is not in JIRA page content
+     fail:
+      msg: "Login Failed"
+     when: "'pavan.bhagavathula' not in jira.content"
+     tags: [jira]
+ 
+ 
+   - name: Verifying Bamboo URL
+     uri:
+       url: "{{ BAMBOOURL }}"
+       method: GET
+       user: "{{ user_name }}"
+       password: "{{ pass_word }}"
+       force_basic_auth: yes
+       status_code: 200
+       return_content: yes
+     register: bamboo
+     tags: [bamboo]
+ 
+ 
+   - name: Verifying Crowd URL
+     uri:
+       url: "{{ CROWDURL }}"
+       method: GET
+       user: "{{ user_name }}"
+       password: "{{ pass_word }}"
+       force_basic_auth: yes
+       status_code: 200
+       return_content: yes
+     register: crowd
+     tags: [crowd]
+ 
+ 
+   - name: Verifying Git URL
+     uri:
+       url: "{{ GITURL }}"
+       method: GET
+       user: "{{ user_name }}"
+       password: "{{ pass_word }}"
+       force_basic_auth: yes
+       status_code: 200
+       return_content: yes
+     register: git
+     tags: [git]
+ 
+ 
+   - name: Git Failed
+     fail:
+     when: git.content==""
+     tags: [git]

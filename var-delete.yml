@@ -1,0 +1,6 @@
+VOL_ID: vol-0865d4329bd763f2e      #Volume to be deletd
+VG_NAME: zabbix_vg   #Volume group in which EBS vol exists
+LV_NAME: zabbix_lv   #Logical volume in which EBS vol exists
+UNMOUNT_DST: /mnt/SecurityScans/Zabbix/New    #volume mounted path
+SIZE_RED: 1020            # can provide in %of VG or in required size in MB
+DEV_EXIST: /dev/xvdba

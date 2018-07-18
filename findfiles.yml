@@ -1,0 +1,12 @@
+---
+- name: Recursively find /tmp files older than 2 days
+  find:
+   paths: /tmp
+   age: 2d
+   recurse: yes
+
+
+
+
+
+

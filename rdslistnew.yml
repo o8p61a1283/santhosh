@@ -1,0 +1,19 @@
+---
+ 
+ - name: EC2-RDS
+   hosts: local
+   gather_facts: False
+ 
+   vars:
+    Profile: "{{ PROFILE }}"
+    Region: "{{ REGION }}"
+   tasks:
+    - name: List RDS
+      rds:
+       profile: "{{ Profile }}"
+       region: "{{ Region }}"
+       register: rds
+       shell: describe-db-instances
+ 
+    - name:  debug it
+      debug:  msg="{{ rds.instance.status }}" 

@@ -1,0 +1,6 @@
+---
+ - hosts: utility
+   tasks:
+    - name: svninstall
+      apt: name=subversion state=installed 
+      become_user: root

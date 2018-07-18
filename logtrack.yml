@@ -1,0 +1,6 @@
+---
+- logentries:
+    path: /var/log/nginx/access.log
+    state: present
+    name: nginx-access-log
+

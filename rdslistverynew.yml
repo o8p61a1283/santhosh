@@ -1,0 +1,7 @@
+---
+# playbook.yml
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Listing RDS Instances 
+      shell: aws --profile rivet-west-2 rds describe-db-instances | grep DBINSTANCES | awk -F" " '{print $10,"\t"$14,":",$15}' > rdslist

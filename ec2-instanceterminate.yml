@@ -1,0 +1,17 @@
+---
+  - name: Terminate Instance
+    hosts: local
+    gather_facts: False
+
+    vars:
+     instance_ids: "{{ INSTANCE_ID }}"
+     Profile: "{{ PROFILE }}"
+     Region: "{{ REGION }}"
+
+    tasks:
+      - ec2:
+          profile: "{{ Profile }}"
+          region: "{{ Region }}"
+          instance_id: "{{ instance_ids }}"
+          state: absent
+          
